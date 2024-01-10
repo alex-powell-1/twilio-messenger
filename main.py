@@ -193,7 +193,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
         # This is if checkbox is set to off ('0')
         # This will only print incoming messages.
         else:
-            # Check if it is an incoming message (not 828-439-0961)
+            # Check if it is an incoming message (not Twilio phone number)
             if formatted_from_phone != format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
                 color_tag = 'customer'
                 # Insert Text
