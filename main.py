@@ -1,6 +1,5 @@
-from os import environ, system
+from os import environ
 import tkinter
-import pygame.base
 # Set to disable console output upon initialization
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import ttkbootstrap as ttk
@@ -11,6 +10,7 @@ import pandas
 from sys import platform, exit
 from twilio.rest import Client
 import pyodbc
+import pygame
 from pygame import mixer
 from datetime import datetime
 from dateutil import tz
@@ -75,7 +75,6 @@ def twilio_client():
 
 def get_recent_messages(number_to_retrieve=40):
     """retrieves recent messages from share drive, clears scrolled text box, prints messages"""
-    """The plan of this function is to retrieve """
     sms_messages = combine_and_sort_sms_by_date()
     # Clear Screen
     clear_scrolling_text()
@@ -164,7 +163,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
         # Will print all incoming and outgoing messages with left/right, black/green formatting
         if outgoing_message_checkbox_used() == 1:
             # Check if it is an outgoing message
-            if formatted_from_phone == '828-439-0961':
+            if formatted_from_phone == format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
                 user_id = line['user'].title()
                 color_tag = 'store'
                 st.insert(END, f" \n------------------------------------------------\n\n"
@@ -174,9 +173,9 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
                 st.insert(END, f" {line['body']}\n", f"{color_tag}message")
                 # ...with styling tags
                 st.tag_config('storeheader', foreground="#333333", justify="right",
-                              font=("Open Sans", 10, "italic"))
-                st.tag_config('storephone', foreground="#333333", justify="right", font=("Open Sans", 10, "bold"))
-                st.tag_config('storemessage', foreground="green", justify="right", font=(theme.font, 13, "normal"),
+                              font=theme.datetime_header_font)
+                st.tag_config('storephone', foreground="#333333", justify="right", font=theme.phone_header_font)
+                st.tag_config('storemessage', foreground="green", justify="right", font=theme.message_font,
                               wrap="word", lmargin1=180)
             else:
                 color_tag = 'customer'
@@ -189,13 +188,13 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
 
                 st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
                 st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
-                st.tag_config('customermessage', foreground="black", font=(theme.font, 13, "normal"), wrap="word", rmargin=150)
+                st.tag_config('customermessage', foreground="black", font=(theme.main_font, 13, "normal"), wrap="word", rmargin=150)
         # Filter out outgoing messages
         # This is if checkbox is set to off ('0')
         # This will only print incoming messages.
         else:
             # Check if it is an incoming message (not 828-439-0961)
-            if formatted_from_phone != '828-439-0961':
+            if formatted_from_phone != format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
                 color_tag = 'customer'
                 # Insert Text
                 st.insert(END, f" \n------------------------------------------------\n\n"
@@ -205,7 +204,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
                 # ...with styling tags
                 st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
                 st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
-                st.tag_config('customermessage', foreground="black", font=(theme.font, 13, "normal"), wrap="word", rmargin=300)
+                st.tag_config('customermessage', foreground="black", font=(theme.main_font, 13, "normal"), wrap="word", rmargin=150)
 
         # Automatically Scroll to end
         st.see(ttk.END)
@@ -289,7 +288,7 @@ def query_db(phone_number):
     cursor = connection.cursor()
 
     SQL_QUERY = f"""
-            SELECT CUST_NO, FST_NAM, LST_NAM, PHONE_1, EMAIL_ADRS_1, LOY_PTS_BAL, LST_SAL_DAT
+            SELECT CUST_NO, FST_NAM, LST_NAM, PHONE_1, EMAIL_ADRS_1, LOY_PTS_BAL, LST_SAL_DAT, CATEG_COD
             FROM AR_CUST
             WHERE PHONE_1 = '{phone_number}' or PHONE_2 = '{phone_number}'
             """
@@ -302,7 +301,8 @@ def query_db(phone_number):
         customer_email = SQL[0][4]
         rewards_points = SQL[0][5]
         last_sale_date = SQL[0][6]
-        return customer_name, customer_email, rewards_points, last_sale_date
+        customer_category = SQL[0][7]
+        return customer_name, customer_email, rewards_points, last_sale_date, customer_category
     else:
         return
 
@@ -454,7 +454,7 @@ def outgoing_message_checkbox_used():
 # Create the main window
 parent = ttk.Window()
 style = ttk.Style()
-style.configure('my.TButton', font=('Lora', 11), background=theme.login_button_color, padding=10)
+style.configure('my.TButton', font=(theme.main_font, 11), background=theme.login_button_color, padding=10)
 
 frame = ttk.Frame(parent)
 parent.tk.call('wm', 'iconphoto', parent._w, PhotoImage(file=application_icon))
@@ -473,19 +473,19 @@ logo_label = ttk.Label(frame, image=logo)
 logo_label.pack(side="top")
 
 # Create and place the username label and entry
-username_label = ttk.Label(frame, text="Username:", justify="center", font=(theme.font, 12, "normal"))
+username_label = ttk.Label(frame, text="Username:", justify="center", font=theme.login_label_font)
 username_label.pack(pady=5)
 
 
-username_entry = ttk.Entry(frame, justify="center", font=(theme.font, 12, "normal"))
+username_entry = ttk.Entry(frame, justify="center", font=theme.login_label_font)
 username_entry.pack(pady=5)
 username_entry.focus_set()
 
 # Create and place the password label and entry
-password_label = ttk.Label(frame, text="Password:", justify="center", font=(theme.font, 12, "normal"))
+password_label = ttk.Label(frame, text="Password:", justify="center", font=theme.login_label_font)
 password_label.pack(pady=5)
 
-password_entry = ttk.Entry(frame, show="*", justify="center", font=(theme.font, 12, "normal"))
+password_entry = ttk.Entry(frame, show="*", justify="center", font=theme.login_label_font)
 password_entry.pack(pady=5)
 password_entry.bind('<Return>', submit_form)
 
@@ -526,10 +526,10 @@ st = tkinter.scrolledtext.ScrolledText(app, width=250, height=10)
 st.pack(fill=BOTH, expand=YES)
 
 # Entry: To Phone
-to_phone_label = ttk.Label(app, text="Send to:", font=(theme.font, 10, "normal"))
+to_phone_label = ttk.Label(app, text="Send to:", font=(theme.main_font, 10, "normal"))
 to_phone_label.pack(pady=10)
 
-to_phone_box = ttk.Entry(app, width=17, font=(theme.font, 12, "normal"), justify="center")
+to_phone_box = ttk.Entry(app, width=17, font=(theme.main_font, 12, "normal"), justify="center")
 to_phone_box.bind("<Tab>", focus_next_widget)
 to_phone_box.pack(expand=NO)
 to_phone_box.focus_set()
@@ -538,12 +538,12 @@ to_phone_box.focus_set()
 b3 = ttk.Button(app, text='Customer Lookup', bootstyle=OUTLINE, command=lookup_customer_data)
 b3.pack(padx=5, pady=10)
 
-message_box = ttk.Text(app, width=34, height=3, wrap="word", font=(theme.font, 12, "normal"), fg="black", pady=10,
+message_box = ttk.Text(app, width=34, height=3, wrap="word", font=(theme.main_font, 12, "normal"), fg="black", pady=10,
                        padx=10)
 message_box.bind("<Tab>", focus_next_widget)
 message_box.pack(expand=NO)
 
-username_label = ttk.Label(app, text=f"{user}", font=(theme.font, 10, "italic"), foreground="#333333")
+username_label = ttk.Label(app, text=f"{user}", font=(theme.main_font, 10, "italic"), foreground="#333333")
 username_label.pack(side=BOTTOM, pady=10)
 
 
