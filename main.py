@@ -351,7 +351,8 @@ def search_messages():
 
     search_results = []
     for message in messages:
-        if query.lower() in str(message['body']).lower() or query in str(message['to_phone']) or query in str(message['from_phone']) or query in str(message['date']):
+        if (query.lower() in str(message['body']).lower() or query in str(message['to_phone'])
+                or query in str(message['from_phone']) or query in str(message['date'])):
             search_results.append(message)
     if len(search_results) == 0:
         messagebox.showerror(title="No Messages Found", message="No Messages Found. Try Again.\n\n"
@@ -459,7 +460,7 @@ style.configure('my.TButton', font=('Lora', 11), background=theme.login_button_c
 
 frame = ttk.Frame(parent)
 parent.tk.call('wm', 'iconphoto', parent._w, PhotoImage(file=application_icon))
-parent.title("Login Form")
+parent.title(theme.login_title)
 screen_width = parent.winfo_screenwidth()
 screen_height = parent.winfo_screenheight()
 parent.geometry(f"{round(screen_width * .25)}x{round(screen_height * .8)}")
@@ -502,7 +503,7 @@ parent.mainloop()
 # ---------------------------------------------------------------------------- #
 
 
-app = ttk.Window(title=creds.application_title, themename=creds.theme_name)
+app = ttk.Window(title=theme.messenger_title, themename=theme.theme_name)
 screen_width = app.winfo_screenwidth()
 screen_height = app.winfo_screenheight()
 app.geometry(f"{round(screen_width * .25)}x{round(screen_height * .8)}")
