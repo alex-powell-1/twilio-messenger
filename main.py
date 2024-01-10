@@ -1,8 +1,6 @@
 from os import environ, system
 import tkinter
-
 import pygame.base
-
 # Set to disable console output upon initialization
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import ttkbootstrap as ttk
@@ -179,7 +177,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
                               font=("Open Sans", 10, "italic"))
                 st.tag_config('storephone', foreground="#333333", justify="right", font=("Open Sans", 10, "bold"))
                 st.tag_config('storemessage', foreground="green", justify="right", font=(theme.font, 13, "normal"),
-                              wrap="word", lmargin1=260)
+                              wrap="word", lmargin1=180)
             else:
                 color_tag = 'customer'
             # Insert Text
@@ -191,7 +189,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
 
                 st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
                 st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
-                st.tag_config('customermessage', foreground="black", font=(theme.font, 13, "normal"), wrap="word", rmargin=300)
+                st.tag_config('customermessage', foreground="black", font=(theme.font, 13, "normal"), wrap="word", rmargin=150)
         # Filter out outgoing messages
         # This is if checkbox is set to off ('0')
         # This will only print incoming messages.
