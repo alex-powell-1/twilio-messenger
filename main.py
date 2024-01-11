@@ -426,11 +426,19 @@ def validate_login():
     userid = username_entry.get()
     password = password_entry.get()
 
-    if platform == "win32":
-        file = open(creds.windows_user_path)
+    try:
+        if platform == "win32":
+            file = open(creds.windows_user_path)
+        else:
+            file = open(creds.mac_user_path)
+    except FileNotFoundError:
+        if platform == "win32":
+            messagebox.showerror("Login Failed", "Network error:\n\nCannot find user file.")
+        else:
+            messagebox.showerror("Login Failed", "Network error:\n\nCannot find user file.\n\n"
+                                                 "Connect to share and try again.")
     else:
-        file = open(creds.mac_user_path)
-    data = json.load(file)
+        data = json.load(file)
 
     for k, v in data.items():
         if k == userid and v['key'] == password:
@@ -441,9 +449,12 @@ def validate_login():
             ttk.Style.instance = None
             user = v['full_name']
             return
-    else:
-        messagebox.showerror("Login Failed", "Invalid username or password")
-        password_entry.focus_set()
+        elif k == userid and v['key'] != password:
+            messagebox.showerror("Login Failed", "Wrong password.")
+            password_entry.focus_set()
+        else:
+            messagebox.showerror("Login Failed", "Contact Administrator.")
+            password_entry.focus_set()
 
 
 def outgoing_message_checkbox_used():
