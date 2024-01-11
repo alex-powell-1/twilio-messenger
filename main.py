@@ -16,6 +16,7 @@ from datetime import datetime
 from dateutil import tz
 import json
 import sys
+import ntplib
 import creds
 import theme
 
@@ -84,7 +85,6 @@ def get_recent_messages(number_to_retrieve=40):
     # Update global variable with data of most recent message
     global most_recent_message
     most_recent_message = sms_messages[-1]
-    print(most_recent_message)
     return
 
 
@@ -160,60 +160,41 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
         formatted_to_phone = format_phone(line['to_phone'], mode="Counterpoint")
         # Update Screen
         app.update()
-        # Check if user wants to see outgoing messages
-        # This is if checkbox is set to ON ('1')
-        # Will print all incoming and outgoing messages with left/right, black/green formatting
-
-        if outgoing_message_checkbox_used() == 1:
-            # Check if it is an outgoing message
-            if formatted_from_phone == format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
-                user_id = line['user'].title()
-                color_tag = 'store'
-                st.insert(END, f" \n------------------------------------------------\n\n"
-                               f" Date: {local_date} at Time: {local_time}\n To:", f"{color_tag}header")
-                st.insert(END, f"{customer_name} at {formatted_to_phone}\n", f"{color_tag}header")
-                st.insert(END, f"User: {user_id}\n", f"{color_tag}phone")
-                st.insert(END, f" {line['body']}\n", f"{color_tag}message")
-                # ...with styling tags
-                st.tag_config('storeheader', foreground="#333333", justify="right",
-                              font=theme.datetime_header_font)
-                st.tag_config('storephone', foreground="#333333", justify="right", font=theme.phone_header_font)
-                st.tag_config('storemessage', foreground="green", justify="right", font=theme.message_font,
-                              wrap="word", lmargin1=180)
-
-            else:
-
-                color_tag = 'customer'
+        # ------------------------INCOMING MESSAGES------------------------#
+        if formatted_from_phone != format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
+            customer_name = line['name']
+            customer_category = line['category']
+            color_tag = 'customer'
             # Insert Text
-                st.insert(END, f" \n------------------------------------------------\n\n"
-                               f" Date: {local_date} at Time: {local_time}\n From:", f"{color_tag}header")
-                st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
-                st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
-                st.insert(END,f" {line['body']}\n", f"{color_tag}message")
-                # ...with styling tags
-
-                st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
-                st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
-                st.tag_config('customermessage', foreground="black", font=(theme.main_font, 13, "normal"), wrap="word", rmargin=150)
-        # Filter out outgoing messages
-        # This is if checkbox is set to off ('0')
-        # This will only print incoming messages.
+            st.insert(END, f" \n------------------------------------------------\n\n"
+                           f" Date: {local_date} at Time: {local_time}\n From:", f"{color_tag}header")
+            st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
+            st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
+            st.insert(END, f" {line['body']}\n", f"{color_tag}message")
+            # ...with styling tags
+            st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
+            st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
+            st.tag_config('customermessage', foreground="black", font=(theme.main_font, 13, "normal"), wrap="word",
+                          rmargin=150)
         else:
-            # Check if it is an incoming message (not Twilio phone number)
-            if formatted_from_phone != format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
-                customer_name = line['name']
-                customer_category = line['category']
-                color_tag = 'customer'
-                # Insert Text
-                st.insert(END, f" \n------------------------------------------------\n\n"
-                               f" Date: {local_date} at Time: {local_time}\n From:", f"{color_tag}header")
-                st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
-                st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
-                st.insert(END, f" {line['body']}\n", f"{color_tag}message")
-                # ...with styling tags
-                st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
-                st.tag_config('customerphone', foreground="#333333", justify="left", font=("Open Sans", 10, "bold"))
-                st.tag_config('customermessage', foreground="black", font=(theme.main_font, 13, "normal"), wrap="word", rmargin=150)
+            # ------------------------OUTGOING MESSAGES------------------------#
+            # Check if user wants to see outgoing messages
+            if outgoing_message_checkbox_used() == 1:
+                # Check if it is an outgoing message
+                if formatted_from_phone == format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
+                    user_id = line['user'].title()
+                    color_tag = 'store'
+                    st.insert(END, f" \n------------------------------------------------\n\n"
+                                   f" Date: {local_date} at Time: {local_time}\n To: ", f"{color_tag}header")
+                    st.insert(END, f"{customer_name} at {formatted_to_phone}\n", f"{color_tag}header")
+                    st.insert(END, f"User: {user_id}\n", f"{color_tag}phone")
+                    st.insert(END, f" {line['body']}\n", f"{color_tag}message")
+                    # ...with styling tags
+                    st.tag_config('storeheader', foreground="#333333", justify="right",
+                                  font=theme.datetime_header_font)
+                    st.tag_config('storephone', foreground="#333333", justify="right", font=theme.phone_header_font)
+                    st.tag_config('storemessage', foreground="green", justify="right", font=theme.message_font,
+                                  wrap="word", lmargin1=180)
 
         # Automatically Scroll to end
         st.see(ttk.END)
@@ -224,10 +205,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
 def get_most_recent_message():
     """gets the timestamp for the most recent text message in csv file"""
     sms_messages = combine_and_sort_sms_by_date()
-    print(sms_messages[-5])
     global most_recent_message
-    print("First time: ", end="")
-    print(most_recent_message)
     index_of_previous_most_recent = sms_messages.index(most_recent_message)
     messages_to_print = sms_messages[index_of_previous_most_recent + 1:]
     print_sms_messages(messages_to_print, len(messages_to_print))
@@ -244,9 +222,6 @@ def get_most_recent_message():
                     customer_sound.play()
         # Update Most Recent Message Global Variable
         most_recent_message = messages_to_print[-1]
-
-    print("second time: ", end="")
-    print(most_recent_message)
 
     # Wait, then loop process again
     app.after(1000, get_most_recent_message)
@@ -373,6 +348,13 @@ def search_messages():
 
 
 # ----------------------- SEND TEXT MESSAGES -------------------------#
+def get_ntp_time():
+    call = ntplib.NTPClient()
+    response = call.request('0.pool.ntp.org', version=3)
+    t = datetime.fromtimestamp(response.tx_time)
+    return t.strftime('%Y-%m-%d %H:%M:%S')
+
+
 def send_text():
     # Get Listbox Value, Present Message Box with Segment
     phone_number = format_phone(to_phone_box.get(), prefix=True)
@@ -389,7 +371,7 @@ def send_text():
 
     message_box.delete("1.0", END)
 
-    log_data = [[str(datetime.now())[:-7], phone_number, TWILIO_PHONE_NUMBER, message.strip(),
+    log_data = [[str(get_ntp_time()), phone_number, TWILIO_PHONE_NUMBER, message.strip(),
                  userid, customer_name, customer_category]]
     df = pandas.DataFrame(log_data, columns=["date", "to_phone", "from_phone", "body",
                                              "user", "name", "category"])
