@@ -350,9 +350,13 @@ def search_messages():
 # ----------------------- SEND TEXT MESSAGES -------------------------#
 def get_ntp_time():
     call = ntplib.NTPClient()
-    response = call.request('0.pool.ntp.org', version=3)
-    t = datetime.fromtimestamp(response.tx_time)
-    return t.strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        response = call.request('0.pool.ntp.org', version=3)
+        t = datetime.fromtimestamp(response.tx_time)
+    except ntplib.NTPException:
+        app.after(500, get_ntp_time()
+    else:
+        return t.strftime('%Y-%m-%d %H:%M:%S')
 
 
 def send_text():
