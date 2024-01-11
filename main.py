@@ -39,8 +39,9 @@ EST_TIME = tz.gettz('America/New_York')
 try:
     mixer.init()
 except pygame.base.error:
-    pass
+    sound = False
 else:
+    sound = True
     customer_sound = mixer.Sound("./sounds/chime.wav")
     store_sound = mixer.Sound("./sounds/pop.wav")
 
@@ -83,6 +84,7 @@ def get_recent_messages(number_to_retrieve=40):
     # Update global variable with data of most recent message
     global most_recent_message
     most_recent_message = sms_messages[-1]
+    print(most_recent_message)
     return
 
 
@@ -144,23 +146,24 @@ def reformat_date_and_time(timestamp):
 
 def print_sms_messages(incoming_sms_messages, number_of_messages):
     # Combine incoming and outgoing messages into one list by date
-
     for line in incoming_sms_messages[(number_of_messages * -1):]:
         # Set scrolled text widget to read/write and font to black
         st.config(state="normal", foreground="black")
-        # Get timestamp from CSV
+        # Get timestamp, name, and customer category from CSV
         timestamp = line['date']
+        customer_name = line['name']
+        customer_category = line['category']
         # Convert timestamp to EST
         local_date, local_time = reformat_date_and_time(timestamp)
         # Reformat Phone Number for Counterpoint Use and easy user viewing
         formatted_from_phone = format_phone(line['from_phone'], mode="Counterpoint")
         formatted_to_phone = format_phone(line['to_phone'], mode="Counterpoint")
-        to_phone = format_phone(line['to_phone'], mode="Counterpoint")
         # Update Screen
         app.update()
         # Check if user wants to see outgoing messages
         # This is if checkbox is set to ON ('1')
         # Will print all incoming and outgoing messages with left/right, black/green formatting
+
         if outgoing_message_checkbox_used() == 1:
             # Check if it is an outgoing message
             if formatted_from_phone == format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
@@ -168,7 +171,7 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
                 color_tag = 'store'
                 st.insert(END, f" \n------------------------------------------------\n\n"
                                f" Date: {local_date} at Time: {local_time}\n To:", f"{color_tag}header")
-                st.insert(END, f"{formatted_to_phone}\n", f"{color_tag}phone")
+                st.insert(END, f"{customer_name} at {formatted_to_phone}\n", f"{color_tag}header")
                 st.insert(END, f"User: {user_id}\n", f"{color_tag}phone")
                 st.insert(END, f" {line['body']}\n", f"{color_tag}message")
                 # ...with styling tags
@@ -177,12 +180,15 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
                 st.tag_config('storephone', foreground="#333333", justify="right", font=theme.phone_header_font)
                 st.tag_config('storemessage', foreground="green", justify="right", font=theme.message_font,
                               wrap="word", lmargin1=180)
+
             else:
+
                 color_tag = 'customer'
             # Insert Text
                 st.insert(END, f" \n------------------------------------------------\n\n"
                                f" Date: {local_date} at Time: {local_time}\n From:", f"{color_tag}header")
                 st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
+                st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
                 st.insert(END,f" {line['body']}\n", f"{color_tag}message")
                 # ...with styling tags
 
@@ -195,11 +201,14 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
         else:
             # Check if it is an incoming message (not Twilio phone number)
             if formatted_from_phone != format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
+                customer_name = line['name']
+                customer_category = line['category']
                 color_tag = 'customer'
                 # Insert Text
                 st.insert(END, f" \n------------------------------------------------\n\n"
                                f" Date: {local_date} at Time: {local_time}\n From:", f"{color_tag}header")
                 st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
+                st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
                 st.insert(END, f" {line['body']}\n", f"{color_tag}message")
                 # ...with styling tags
                 st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"))
@@ -215,7 +224,10 @@ def print_sms_messages(incoming_sms_messages, number_of_messages):
 def get_most_recent_message():
     """gets the timestamp for the most recent text message in csv file"""
     sms_messages = combine_and_sort_sms_by_date()
+    print(sms_messages[-5])
     global most_recent_message
+    print("First time: ", end="")
+    print(most_recent_message)
     index_of_previous_most_recent = sms_messages.index(most_recent_message)
     messages_to_print = sms_messages[index_of_previous_most_recent + 1:]
     print_sms_messages(messages_to_print, len(messages_to_print))
@@ -224,16 +236,18 @@ def get_most_recent_message():
     if len(messages_to_print) > 0:
         # Play Sound Effect for each new message
         # Try block in case of missing audio driver
-        try:
+        if sound:
             for x in messages_to_print:
                 if x['from_phone'] == TWILIO_PHONE_NUMBER[2:]:
                     store_sound.play()
                 else:
                     customer_sound.play()
-        except pygame.base.error:
-            pass
         # Update Most Recent Message Global Variable
         most_recent_message = messages_to_print[-1]
+
+    print("second time: ", end="")
+    print(most_recent_message)
+
     # Wait, then loop process again
     app.after(1000, get_most_recent_message)
 
@@ -261,23 +275,24 @@ def lookup_customer_data():
     cp_phone_input = format_phone(user_phone_input, mode="Counterpoint")
     # Create customer variables from tuple return of query_db
     try:
-        customer_name, customer_email, rewards_points, last_sale_date = query_db(cp_phone_input)
+        customer_name, customer_email, rewards_points, last_sale_date, customer_category = query_db(cp_phone_input)
     # Create MessageBox with Customer Info
     except TypeError:
         messagebox.showinfo("Customer Info", "Customer Not Found")
     else:
         try:
             messagebox.showinfo("Customer Info", f"Name:\n{customer_name}\n\n"
+                                                 f"Category:\n{customer_category}\n\n"
                                                  f"Email:\n{customer_email}\n\n"
                                                  f"Rewards Points:\n${rewards_points}\n\n"
                                                  f"Last Sale Date:\n{last_sale_date.strftime('%m/%d/%Y')}\n\n"
-                                                 f" Last Twilio Message Sent:\n{last_twilio_message}")
+                                                 f"Last Twilio Message Sent:\n\n{last_twilio_message}")
         except AttributeError:
             messagebox.showinfo("Customer Info", f"Name:\n{customer_name}\n\n"
                                                  f"Email:\n{customer_email}\n\n"
                                                  f"Rewards Points:\n${rewards_points}\n\n"
                                                  f"Last Sale Date:\nNo Sales History\n\n"
-                                                 f" Last Twilio Message Sent:\n{last_twilio_message}", icon="question")
+                                                 f" Last Twilio Message Sent:\n\n{last_twilio_message}", icon="question")
 
 
 # ----------------------- GET CUSTOMER DATA FROM COUNTERPOINT -------------------------#
@@ -304,32 +319,28 @@ def query_db(phone_number):
         customer_category = SQL[0][7]
         return customer_name, customer_email, rewards_points, last_sale_date, customer_category
     else:
-        return
+        return "Unknown Name", "Unknown Email", 0, "No Sales History", "Unknown Category"
 
 
 # ----------------------- FORMAT PHONE NUMBERS -------------------------#
 def format_phone(phone_number, mode="Twilio", prefix=False):
+    """Cleanses input data and returns masked phone for either Twilio or Counterpoint configuration"""
     phone_number_as_string = str(phone_number)
+    # Strip away extra symbols
+    formatted_phone = phone_number_as_string.replace(" ", "")  # Remove Spaces
+    formatted_phone = formatted_phone.replace("-", "")  # Remove Hyphens
+    formatted_phone = formatted_phone.replace("(", "")  # Remove Open Parenthesis
+    formatted_phone = formatted_phone.replace(")", "")  # Remove Close Parenthesis
+    formatted_phone = formatted_phone.replace("+1", "")  # Remove +1
+    formatted_phone = formatted_phone[-10:]  # Get last 10 characters
     if mode == "Counterpoint":
         # Masking ###-###-####
-        cp_phone = phone_number_as_string.replace(" ", "")  # Remove Spaces
-        cp_phone = cp_phone.replace("-", "")  # Remove Hyphens
-        cp_phone = cp_phone.replace("(", "")  # Remove Open Parenthesis
-        cp_phone = cp_phone.replace(")", "")  # Remove Close Parenthesis
-        cp_phone = cp_phone[-10:]
-        cp_phone = cp_phone.replace("+1", "")  # Remove +1
-        cp_phone = cp_phone[0:3] + "-" + cp_phone[3:6] + "-" + cp_phone[6:10]
+        cp_phone = formatted_phone[0:3] + "-" + formatted_phone[3:6] + "-" + formatted_phone[6:10]
         return cp_phone
-
     else:
-        twilio_phone = phone_number.replace(" ", "")  # Remove Spaces
-        twilio_phone = twilio_phone.replace("-", "")  # Remove Hyphens
-        twilio_phone = twilio_phone.replace("(", "")  # Remove Open Parenthesis
-        twilio_phone = twilio_phone.replace(")", "")  # Remove Close Parenthesis
-        twilio_phone = twilio_phone.replace("+1", "")  # Remove +1
         if prefix:
-            twilio_phone = "+1" + twilio_phone
-        return twilio_phone
+            twilio_phone = "+1" + formatted_phone
+        return formatted_phone
 
 
 # ----------------------- MESSAGE SEARCH -------------------------#
@@ -372,10 +383,16 @@ def send_text():
         to=phone_number,
         body=message
     )
+
+    (customer_name, customer_email, rewards_points,
+     last_sale_date, customer_category) = query_db(format_phone(phone_number, mode="Counterpoint"))
+
     message_box.delete("1.0", END)
 
-    log_data = [[str(datetime.now())[:-7], phone_number, TWILIO_PHONE_NUMBER, message.strip(), userid]]
-    df = pandas.DataFrame(log_data, columns=["date", "to_phone", "from_phone", "body", "user"])
+    log_data = [[str(datetime.now())[:-7], phone_number, TWILIO_PHONE_NUMBER, message.strip(),
+                 userid, customer_name, customer_category]]
+    df = pandas.DataFrame(log_data, columns=["date", "to_phone", "from_phone", "body",
+                                             "user", "name", "category"])
 
     if platform == "darwin":
         try:
