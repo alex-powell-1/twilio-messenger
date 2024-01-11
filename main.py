@@ -384,9 +384,9 @@ def send_text():
         try:
             pandas.read_csv(creds.mac_outgoing_log_path)
         except FileNotFoundError:
-            df.to_csv(creds.windows_outgoing_log_path, mode='a', header=True, index=False)
+            df.to_csv(creds.mac_outgoing_log_path, mode='a', header=True, index=False)
         else:
-            df.to_csv(creds.windows_outgoing_log_path, mode='a', header=False, index=False)
+            df.to_csv(creds.mac_outgoing_log_path, mode='a', header=False, index=False)
     elif platform == "win32":
         try:
             pandas.read_csv(creds.windows_outgoing_log_path)
