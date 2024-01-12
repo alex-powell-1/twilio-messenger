@@ -449,12 +449,11 @@ def validate_login():
             ttk.Style.instance = None
             user = v['full_name']
             return
-        elif k == userid and v['key'] != password:
-            messagebox.showerror("Login Failed", "Wrong password.")
-            password_entry.focus_set()
-        else:
-            messagebox.showerror("Login Failed", "Contact Administrator.")
-            password_entry.focus_set()
+    else:
+        messagebox.showerror("Login Failed", "Contact Administrator.")
+        parent.focus()
+        password_entry.focus_set()
+        return
 
 
 def outgoing_message_checkbox_used():
