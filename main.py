@@ -397,7 +397,7 @@ class MessengerWindow:
 
     # -------------Customer Lookup--------------- #
 
-    def lookup_last_message_sent(phone_number):
+    def lookup_last_message_sent(self, phone_number):
         """Gets all messages from twilio API and writes to .csv on share drive"""
         client = Client(account_sid, auth_token)
         messages = client.messages.list(to=phone_number)
@@ -576,6 +576,5 @@ class MessengerWindow:
 def application():
     login = LoginWindow()
     messenger = MessengerWindow()
-
 
 application()
