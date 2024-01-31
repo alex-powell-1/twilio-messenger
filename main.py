@@ -313,7 +313,6 @@ class MessengerWindow:
             # Get timestamp, name, and customer category from CSV
             timestamp = line['date']
             customer_name = line['name']
-            customer_category = line['category']
             # Convert timestamp to EST
             local_date, local_time = self.reformat_date_and_time(timestamp)
             # Reformat Phone Number for Counterpoint Use and easy user viewing
@@ -325,6 +324,7 @@ class MessengerWindow:
             if formatted_from_phone != self.format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
                 customer_name = line['name']
                 customer_category = line['category']
+                media_url = line['media']
                 color_tag = 'customer'
                 # Insert Text
                 self.st.insert(END, f" \n------------------------------------------------\n\n"
@@ -332,6 +332,8 @@ class MessengerWindow:
                 self.st.insert(END, f"{formatted_from_phone}\n", f"{color_tag}phone")
                 self.st.insert(END, f" Name: {customer_name} Category: {customer_category}\n", f"{color_tag}header")
                 self.st.insert(END, f" {line['body']}\n", f"{color_tag}message")
+                if media_url != "No Media":
+                    self.st.insert(END, f" Picture URL: \n{line['media']}\n", f"{color_tag}message")
                 # ...with styling tags
                 self.st.tag_config('customerheader', foreground="#333333", font=("Open Sans", 10, "italic"),
                               lmargin1=0, rmargin=10)
@@ -576,5 +578,6 @@ class MessengerWindow:
 def application():
     login = LoginWindow()
     messenger = MessengerWindow()
+
 
 application()
