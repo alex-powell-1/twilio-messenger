@@ -161,10 +161,6 @@ class LoginWindow:
         else:
             self.password_entry.focus_set()
 
-
-
-# ---------------------------------------------------------------------------- #
-
 class MessengerWindow:
     def __init__(self):
         self.run_process = True
@@ -215,21 +211,11 @@ class MessengerWindow:
         self.logout_button = ttk.Button(self.app, text='Log Out', command=self.logout, bootstyle=SUCCESS, padding=10)
         self.logout_button.pack(side=BOTTOM, padx=5, pady=5)
 
-        self.username_label = ttk.Label(self.app, text=f"{user}", font=(theme.main_font, 10, "italic"), foreground="#333333")
-        self.username_label.pack(side=BOTTOM, pady=10)
-
-
-        # Show Outgoing Messages checkbox
-        self.outgoing_messages_checkbox_state = ttk.IntVar()
-        self.show_outgoing_messages_box = ttk.Checkbutton(text="Show Outgoing Messages",
-                                                     variable=self.outgoing_messages_checkbox_state,
-                                                     command=self.outgoing_message_checkbox_used)
-        # Set Initial Value of Checkbox to ON
-        self.outgoing_messages_checkbox_state.set(1)
-        self.show_outgoing_messages_box.pack(side=BOTTOM, padx=10)
+        self.username_label = ttk.Label(self.app, text=f"User: {user}", font=(theme.main_font, 10, "italic"), foreground="#333333")
+        self.username_label.pack(side=BOTTOM, pady=5)
 
         self.b3 = ttk.Button(self.app, text='Send Message', command=self.send_text, bootstyle=SUCCESS, padding=10)
-        self.b3.pack(side=BOTTOM, padx=50, pady=10)
+        self.b3.pack(side=BOTTOM, padx=50, pady=5)
 
         self.twilio_client()
         self.app.mainloop()
@@ -343,25 +329,23 @@ class MessengerWindow:
                               wrap="word", lmargin1=0, rmargin=10)
             else:
                 # ------------------------OUTGOING MESSAGES------------------------#
-                # Check if user wants to see outgoing messages
-                if self.outgoing_message_checkbox_used() == 1:
-                    # Check if it is an outgoing message
-                    if formatted_from_phone == self.format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
-                        user_id = line['user'].title()
-                        color_tag = 'store'
-                        self.st.insert(END, f" \n------------------------------------------------\n\n"
-                                       f" Date: {local_date} at Time: {local_time}\n To: ", f"{color_tag}header")
-                        self.st.insert(END, f"{customer_name} at {formatted_to_phone}\n", f"{color_tag}header")
-                        self.st.insert(END, f" User: {user_id}\n", f"{color_tag}phone")
-                        self.st.insert(END, f" {line['body']}\n", f"{color_tag}message")
-                        # ...with styling tags
-                        self.st.tag_config('storeheader', foreground="#333333", justify="left",
-                                      font=theme.datetime_header_font,
-                                      lmargin1=0, rmargin=10)
-                        self.st.tag_config('storephone', foreground="#333333", justify="left", font=theme.phone_header_font,
-                                      lmargin1=0, rmargin=10)
-                        self.st.tag_config('storemessage', foreground="green", justify="left", font=theme.message_font,
-                                      wrap="word", lmargin1=0, rmargin=10)
+                # Check if it is an outgoing message
+                if formatted_from_phone == self.format_phone(creds.TWILIO_PHONE_NUMBER, mode="Counterpoint"):
+                    user_id = line['user'].title()
+                    color_tag = 'store'
+                    self.st.insert(END, f" \n------------------------------------------------\n\n"
+                                   f" Date: {local_date} at Time: {local_time}\n To: ", f"{color_tag}header")
+                    self.st.insert(END, f"{customer_name} at {formatted_to_phone}\n", f"{color_tag}header")
+                    self.st.insert(END, f" User: {user_id}\n", f"{color_tag}phone")
+                    self.st.insert(END, f" {line['body']}\n", f"{color_tag}message")
+                    # ...with styling tags
+                    self.st.tag_config('storeheader', foreground="#333333", justify="left",
+                                  font=theme.datetime_header_font,
+                                  lmargin1=0, rmargin=10)
+                    self.st.tag_config('storephone', foreground="#333333", justify="left", font=theme.phone_header_font,
+                                  lmargin1=0, rmargin=10)
+                    self.st.tag_config('storemessage', foreground="green", justify="left", font=theme.message_font,
+                                  wrap="word", lmargin1=0, rmargin=10)
 
             # Automatically Scroll to end
             self.st.see(ttk.END)
@@ -567,12 +551,12 @@ class MessengerWindow:
         event.widget.tk_focusNext().focus()
         return ("break")
 
-    def outgoing_message_checkbox_used(self):
-        check = self.outgoing_messages_checkbox_state.get()
-        if check == 0:
-            return 0
-        if check == 1:
-            return 1
+    # def outgoing_message_checkbox_used(self):
+    #     check = self.outgoing_messages_checkbox_state.get()
+    #     if check == 0:
+    #         return 0
+    #     if check == 1:
+    #         return 1
 
 
 def application():
