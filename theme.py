@@ -8,8 +8,8 @@ message_font = (main_font, 13, "normal")
 # TTK Bootstrap
 login_title = "Login Form"
 login_label_font = (main_font, 12, "normal")
-messenger_title = "Settlemyre Nursery Messenger"
-theme_name = 'settlemyre'
+messenger_title = ""
+theme_name = ''
 
 # Login Screen
 login_button_color = "#207120"
