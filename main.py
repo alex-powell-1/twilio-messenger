@@ -17,8 +17,10 @@ from dateutil import tz
 import json
 import sys
 import ntplib
+from ntplib import NTPException
 import creds
 import theme
+import random
 
 r"""
  ___  __  __  ___    __  __  ____  ___  ___  ____  _  _  ___  ____  ____ 
@@ -501,9 +503,14 @@ class MessengerWindow:
     # ----------------------- SEND TEXT MESSAGES -------------------------#
     def get_ntp_time(self):
         call = ntplib.NTPClient()
-        response = call.request('0.pool.ntp.org', version=3)
-        t = datetime.fromtimestamp(response.tx_time)
-        return t.strftime('%Y-%m-%d %H:%M:%S')
+        ntp_pool = ['time1.google.com', 'time2.google.com', 'time3.google.com', 'time4.google.com']
+        try:
+            response = call.request(random.choice(ntp_pool), version=3)
+        except NTPException:
+            return self.get_ntp_time()
+        else:
+            t = datetime.fromtimestamp(response.tx_time)
+            return t.strftime('%Y-%m-%d %H:%M:%S')
 
     def send_text(self):
         # Get Listbox Value, Present Message Box with Segment
@@ -541,11 +548,11 @@ class MessengerWindow:
             else:
                 df.to_csv(creds.windows_outgoing_log_path, mode='a', header=False, index=False)
 
-
     def clear_scrolling_text(self):
         self.st.config(state="normal")
         self.st.delete("1.0", END)
         self.st.config(state="disabled")
+
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
