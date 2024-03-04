@@ -7,7 +7,7 @@ from tkinter import messagebox, PhotoImage, scrolledtext
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs.dialogs import Querybox
 import pandas
-from sys import platform, exit
+from sys import platform
 from twilio.rest import Client
 import pyodbc
 import pygame
@@ -18,9 +18,10 @@ import json
 import sys
 import ntplib
 from ntplib import NTPException
+import random
 import creds
 import theme
-import random
+
 
 r"""
  ___  __  __  ___    __  __  ____  ___  ___  ____  _  _  ___  ____  ____ 
@@ -70,14 +71,7 @@ application_icon = "./images/icon.png"
 application_logo = "./images/logo_small.png"
 
 
-# Functions
-
-
-
 # -------------------- USER INTERFACE --------------------- #
-
-
-
 # Create the main window
 class LoginWindow:
     def __init__(self):
