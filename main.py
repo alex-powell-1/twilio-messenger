@@ -160,7 +160,7 @@ class LoginWindow:
 class MessengerWindow:
     def __init__(self):
         self.run_process = True
-        self.app = ttk.Window(title=theme.messenger_title, themename=theme.theme_name)
+        self.app = ttk.Window(title=theme.messenger_title, themename='cosmo')
         style = ttk.Style()
         style.configure('my.TButton', font=(theme.main_font, 11), background=theme.login_button_color, padding=10)
         self.style = ttk.Style()
