@@ -1,3 +1,4 @@
+import creds
 from messenger import MessengerWindow
 from login import LoginWindow
 
@@ -14,8 +15,8 @@ Version: 1
 
 
 def application():
-    LoginWindow()
-    MessengerWindow()
+    user = LoginWindow()
+    MessengerWindow(user.username)
 
 
 application()

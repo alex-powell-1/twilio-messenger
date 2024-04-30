@@ -37,7 +37,7 @@ auth_token = creds.auth_token
 recent_messages = ""
 most_recent_message = {}
 userid = ""
-user = ""
+# user = ""
 
 # Timezone
 UTC_TIME = tz.gettz('UTC')
@@ -57,7 +57,8 @@ else:
 
 
 class MessengerWindow:
-    def __init__(self):
+    def __init__(self, user):
+        self.user = user
         self.run_process = True
         self.app = ttk.Window(title=theme.messenger_title, themename='cosmo')
         style = ttk.Style()
@@ -106,7 +107,7 @@ class MessengerWindow:
         self.logout_button = ttk.Button(self.app, text='Log Out', command=self.logout, bootstyle=SUCCESS, padding=10)
         self.logout_button.pack(side=BOTTOM, padx=5, pady=5)
 
-        self.username_label = ttk.Label(self.app, text=f"User: {user}", font=(theme.main_font, 10, "italic"), foreground="#333333")
+        self.username_label = ttk.Label(self.app, text=f"User: {self.user}", font=(theme.main_font, 10, "italic"), foreground="#333333")
         self.username_label.pack(side=BOTTOM, pady=5)
 
         self.b3 = ttk.Button(self.app, text='Send Message', command=self.send_text, bootstyle=SUCCESS, padding=10)
@@ -129,7 +130,7 @@ class MessengerWindow:
             self.app.destroy()
             sys.exit()
 
-    def get_recent_messages(self, number_to_retrieve=40):
+    def get_recent_messages(self, number_to_retrieve=100):
         """retrieves recent messages from share drive, clears scrolled text box, prints messages"""
         sms_messages = self.combine_and_sort_sms_by_date()
         # Clear Screen
@@ -256,9 +257,13 @@ class MessengerWindow:
     def get_most_recent_message(self):
         """gets the timestamp for the most recent text message in csv file"""
         sms_messages = self.combine_and_sort_sms_by_date()
+
         global most_recent_message
+
         index_of_previous_most_recent = sms_messages.index(most_recent_message)
+
         messages_to_print = sms_messages[index_of_previous_most_recent + 1:]
+
         self.print_sms_messages(messages_to_print, len(messages_to_print))
 
         # Update most recent message
@@ -276,7 +281,7 @@ class MessengerWindow:
 
         # Wait, then loop process again
         if self.run_process:
-            self.app.after(1000, self.get_most_recent_message)
+            return self.app.after(1000, self.get_most_recent_message)
         else:
             ttk.Style.instance = None
             self.app.destroy()
@@ -385,9 +390,13 @@ class MessengerWindow:
         if len(query) == 12 and query[3] == "-" and query[7] == "-":
             query = self.format_phone(query)
 
-        messages = self.read_incoming_sms_from_share_drive()
+        incoming_messages = self.read_incoming_sms_from_share_drive()
+        outgoing_messages = self.read_outgoing_sms_from_share_drive()
+
+        messages = incoming_messages + outgoing_messages
 
         search_results = []
+
         for message in messages:
             if (query.lower() in str(message['body']).lower() or query in str(message['to_phone'])
                     or query in str(message['from_phone']) or query in str(message['date'])):
@@ -416,43 +425,48 @@ class MessengerWindow:
         # Get Listbox Value, Present Message Box with Segment
         phone_number = self.format_phone(self.to_phone_box.get(), prefix=True)
         message = self.message_box.get("1.0", END)
-        client = Client(account_sid, auth_token)
-        client.messages.create(
-            from_=TWILIO_PHONE_NUMBER,
-            to=phone_number,
-            body=message
-        )
+        try:
+            client = Client(account_sid, auth_token)
+            client.messages.create(
+                from_=TWILIO_PHONE_NUMBER,
+                to=phone_number,
+                body=message
+            )
 
-        (customer_name, customer_email, rewards_points,
-         last_sale_date, customer_category) = self.query_db(self.format_phone(phone_number, mode="Counterpoint"))
+        except Exception as err:
+            messagebox.showerror(title="Error", message=f"Error: {err}")
 
-        self.message_box.delete("1.0", END)
+        else:
+            (customer_name, customer_email, rewards_points,
+             last_sale_date, customer_category) = self.query_db(self.format_phone(phone_number, mode="Counterpoint"))
 
-        log_data = [[str(self.get_ntp_time()), phone_number, TWILIO_PHONE_NUMBER, message.strip(),
-                     userid, customer_name, customer_category]]
-        df = pandas.DataFrame(log_data, columns=["date", "to_phone", "from_phone", "body",
-                                                 "user", "name", "category"])
+            self.message_box.delete("1.0", END)
+            self.to_phone_box.delete("1.0", END)
 
-        if platform == "darwin":
-            try:
-                pandas.read_csv(creds.mac_outgoing_log_path)
-            except FileNotFoundError:
-                df.to_csv(creds.mac_outgoing_log_path, mode='a', header=True, index=False)
-            else:
-                df.to_csv(creds.mac_outgoing_log_path, mode='a', header=False, index=False)
-        elif platform == "win32":
-            try:
-                pandas.read_csv(creds.windows_outgoing_log_path)
-            except FileNotFoundError:
-                df.to_csv(creds.windows_outgoing_log_path, mode='a', header=True, index=False)
-            else:
-                df.to_csv(creds.windows_outgoing_log_path, mode='a', header=False, index=False)
+            log_data = [[str(self.get_ntp_time()), phone_number, TWILIO_PHONE_NUMBER, message.strip(),
+                         self.user, customer_name, customer_category]]
+            df = pandas.DataFrame(log_data, columns=["date", "to_phone", "from_phone", "body",
+                                                     "user", "name", "category"])
+
+            if platform == "darwin":
+                try:
+                    pandas.read_csv(creds.mac_outgoing_log_path)
+                except FileNotFoundError:
+                    df.to_csv(creds.mac_outgoing_log_path, mode='a', header=True, index=False)
+                else:
+                    df.to_csv(creds.mac_outgoing_log_path, mode='a', header=False, index=False)
+            elif platform == "win32":
+                try:
+                    pandas.read_csv(creds.windows_outgoing_log_path)
+                except FileNotFoundError:
+                    df.to_csv(creds.windows_outgoing_log_path, mode='a', header=True, index=False)
+                else:
+                    df.to_csv(creds.windows_outgoing_log_path, mode='a', header=False, index=False)
 
     def clear_scrolling_text(self):
         self.st.config(state="normal")
         self.st.delete("1.0", END)
         self.st.config(state="disabled")
-
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()

@@ -9,8 +9,11 @@ import json
 import sys
 import creds
 import theme
+
+
 class LoginWindow:
     def __init__(self):
+        self.username = ""
         self.parent = ttk.Window()
         style = ttk.Style()
         style.configure('my.TButton', font=(theme.main_font, 11), background=theme.login_button_color, padding=10)
@@ -48,8 +51,6 @@ class LoginWindow:
         self.parent.mainloop()
 
     def validate_login(self):
-        global userid
-        global user
         userid = self.username_entry.get()
         password = self.password_entry.get()
 
@@ -74,13 +75,13 @@ class LoginWindow:
                 self.parent.destroy()
                 # reset style
                 ttk.Style.instance = None
-                user = v['full_name']
+                self.username = v['name']
+                print(v['name'])
                 return
         else:
             messagebox.showerror("Login Failed", "Contact Administrator.")
             self.parent.focus()
             self.password_entry.focus_set()
-            return
 
     def submit_form(self, event):
         self.validate_login()
